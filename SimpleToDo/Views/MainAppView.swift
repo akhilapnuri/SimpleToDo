@@ -255,12 +255,18 @@ struct MainAppView: View {
                                     if let index = viewModel.tasks.firstIndex(where: { $0.id == task.id }) {
                                         viewModel.tasks[index].isCompleted.toggle()
                                         viewModel.saveTasks()
+                                        if viewModel.tasks[index].isCompleted {
+                                            NotificationManager.shared.cancelNotification(for: task.id)
+                                        } else {
+                                            NotificationManager.shared.scheduleNotification(for: viewModel.tasks[index])
+                                        }
                                     }
                                 },
                                 onEdit: {
                                     editingTask = task
                                 },
                                 onDelete: {
+                                    NotificationManager.shared.cancelNotification(for: task.id)
                                     viewModel.tasks.removeAll { $0.id == task.id }
                                     viewModel.saveTasks()
                                 },
@@ -293,6 +299,7 @@ struct MainAppView: View {
                     )
                     viewModel.tasks.append(newTask)
                     viewModel.saveTasks()
+                    NotificationManager.shared.scheduleNotification(for: newTask)
                 },
                 isDarkMode: isDarkMode
             )
@@ -305,7 +312,7 @@ struct MainAppView: View {
                 ),
                 onSaveTask: { title, description, dueTime, notifyBeforeEnabled, notifyBeforeHours, notifyBeforeMinutes in
                     if let index = viewModel.tasks.firstIndex(where: { $0.id == task.id }) {
-                        viewModel.tasks[index] = Task(
+                        let updatedTask = Task(
                             id: task.id,
                             title: title,
                             description: description,
@@ -315,7 +322,9 @@ struct MainAppView: View {
                             notifyBeforeHours: notifyBeforeHours,
                             notifyBeforeMinutes: notifyBeforeMinutes
                         )
+                        viewModel.tasks[index] = updatedTask
                         viewModel.saveTasks()
+                        NotificationManager.shared.rescheduleNotification(for: updatedTask)
                     }
                     editingTask = nil
                 },

@@ -9,6 +9,11 @@ import SwiftUI
 
 @main
 struct SimpleToDoApp: App {
+    init() {
+        // Request notification permission on app launch
+        NotificationManager.shared.requestNotificationPermission()
+    }
+    
     var body: some Scene {
         WindowGroup {
             LandingView()

@@ -57,6 +57,12 @@ class TaskViewModel: ObservableObject {
         
         do {
             tasks = try JSONDecoder().decode([Task].self, from: savedData)
+            
+            // MARK: - Reschedule Notifications
+            /// After loading tasks, reschedule all notifications for tasks that have notify before enabled
+            for task in tasks where task.notifyBeforeEnabled && !task.isCompleted {
+                NotificationManager.shared.scheduleNotification(for: task)
+            }
         } catch {
             print("Error loading tasks: \(error)")
             tasks = []

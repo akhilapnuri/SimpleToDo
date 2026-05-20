@@ -72,7 +72,7 @@ struct EditTaskView: View {
     }
     
     // MARK: - Notification Time Validation
-    /// Validates that notification time doesn't exceed time left until expiration minus 5 minutes
+    /// Validates notification time is between 5 minutes and the full remaining time until expiration
     var notificationTimeInMinutes: Int {
         (notifyBeforeHours * 60) + notifyBeforeMinutes
     }
@@ -81,18 +81,28 @@ struct EditTaskView: View {
         Int(dueTime.timeIntervalSince(Date()) / 60)
     }
     
+    var minAllowedNotificationMinutes: Int {
+        5 // Minimum 5 minutes before expiration
+    }
+    
     var maxAllowedNotificationMinutes: Int {
-        max(0, timeRemainingInMinutes - 5)
+        timeRemainingInMinutes // Maximum is the full remaining time
     }
     
     var notificationTimeIsValid: Bool {
-        !notifyBeforeEnabled || notificationTimeInMinutes <= maxAllowedNotificationMinutes
+        guard notifyBeforeEnabled else { return true }
+        return notificationTimeInMinutes >= minAllowedNotificationMinutes && notificationTimeInMinutes <= maxAllowedNotificationMinutes
     }
     
     var notificationErrorMessage: String {
-        let maxHours = maxAllowedNotificationMinutes / 60
-        let maxMinutes = maxAllowedNotificationMinutes % 60
-        return "Notification time exceeds available time. Max: \(maxHours)h \(maxMinutes)m"
+        if notificationTimeInMinutes < minAllowedNotificationMinutes {
+            return "Notification must be at least 5 minutes before task expiration"
+        } else if notificationTimeInMinutes > maxAllowedNotificationMinutes {
+            let maxHours = maxAllowedNotificationMinutes / 60
+            let maxMinutes = maxAllowedNotificationMinutes % 60
+            return "Notification time exceeds available time. Max: \(maxHours)h \(maxMinutes)m"
+        }
+        return ""
     }
     
     var body: some View {
