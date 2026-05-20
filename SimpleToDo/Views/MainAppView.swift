@@ -18,6 +18,8 @@ struct MainAppView: View {
     @State private var selectedTab = 0               // 0 = My Tasks, 1 = Completed (for tab filtering)
     @Namespace private var underlineNamespace        // For animated tab underline effect
     @AppStorage("isDarkMode") private var isDarkMode = true  // Persistent dark/light mode
+    @AppStorage("taskSortBy") private var sortBy: String = "Date Added"
+    @AppStorage("taskSortDirection") private var sortDirection: String = "Ascending"
     
     // MARK: - Color Scheme (Environment-Aware: Light/Dark Mode)
     /// All colors adapt to isDarkMode for consistent dark/light mode support
@@ -73,14 +75,41 @@ struct MainAppView: View {
         viewModel.tasks
     }
     
-    // MARK: - Tab Filtering Feature: My Tasks vs Completed
-    /// Filters tasks based on selectedTab: 0 = incomplete tasks, 1 = completed tasks
+    // MARK: - Tab Filtering & Sorting Feature: My Tasks vs Completed
+    /// Filters tasks based on selectedTab and applies sorting preferences
+    /// Sorting options: Date Added, Due Time, A to Z (all with Ascending/Descending direction)
     var filteredTasks: [Task] {
+        var filtered: [Task]
+        
+        // Step 1: Filter by tab
         if selectedTab == 0 {
-            return viewModel.tasks.filter { !$0.isCompleted }
+            filtered = viewModel.tasks.filter { !$0.isCompleted }
         } else {
-            return viewModel.tasks.filter { $0.isCompleted }
+            filtered = viewModel.tasks.filter { $0.isCompleted }
         }
+        
+        // Step 2: Apply sorting
+        switch sortBy {
+        case "Date Added":
+            filtered.sort { task1, task2 in
+                let comparison = task1.id.uuidString.compare(task2.id.uuidString)
+                return sortDirection == "Ascending" ? comparison == .orderedAscending : comparison == .orderedDescending
+            }
+        case "Due Time":
+            filtered.sort { task1, task2 in
+                let comparison = task1.dueTime.compare(task2.dueTime)
+                return sortDirection == "Ascending" ? comparison == .orderedAscending : comparison == .orderedDescending
+            }
+        case "A to Z":
+            filtered.sort { task1, task2 in
+                let comparison = task1.title.localizedCaseInsensitiveCompare(task2.title)
+                return sortDirection == "Ascending" ? comparison == .orderedAscending : comparison == .orderedDescending
+            }
+        default:
+            break
+        }
+        
+        return filtered
     }
     
     var tasksCompleted: Int {
@@ -153,6 +182,7 @@ struct MainAppView: View {
                                 endRadius: 150
                             )
                             .frame(width: 220, height: 220)
+                            .clipShape(Circle())
                             
                             // Progress circle
                             Circle()

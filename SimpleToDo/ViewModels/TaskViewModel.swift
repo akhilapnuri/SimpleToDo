@@ -34,19 +34,28 @@ class TaskViewModel: ObservableObject {
     
     // MARK: - Persistence & Daily Reset Feature: Load Tasks from UserDefaults
     /// Loads tasks from UserDefaults; resets tasks if a new day has started (daily task refresh)
+    /// Clears all tasks regardless of completion status when a new day is detected
     func loadTasks() {
         // Check if we need to reset tasks (new day)
         let today = Calendar.current.startOfDay(for: Date())
         if let lastSaveDate = UserDefaults.standard.object(forKey: lastSaveDateKey) as? Date {
             let lastSaveDay = Calendar.current.startOfDay(for: lastSaveDate)
             if lastSaveDay != today {
-                // Different day, reset tasks
+                // Different day detected, reset all tasks completely
+                print("📅 New day detected! Clearing all tasks from previous day")
                 tasks = []
+                
+                // Clear saved tasks data completely
+                UserDefaults.standard.removeObject(forKey: tasksKey)
                 UserDefaults.standard.set(today, forKey: lastSaveDateKey)
+                
+                // Cancel all pending notifications
+                NotificationManager.shared.cancelAllNotifications()
+                
                 return
             }
         } else {
-            // First time, set today's date
+            // First time app is opened, set today's date
             UserDefaults.standard.set(today, forKey: lastSaveDateKey)
         }
         
